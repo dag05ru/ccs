@@ -53,33 +53,33 @@ public class PingService implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-            ArrayList<Callable<DeviceStatus>> pings = new ArrayList<>();
-            while (true) {
-                try {
-                    Iterable<DeviceStatus> ids = repository.findAll();
-                    for (DeviceStatus ds : ids) {
-                        long now = System.currentTimeMillis();
-                        long updatedAt = Timestamp.valueOf(ds.getUpdatedAt()).getTime();
-                        if (now - updatedAt > sendTimeout) {
-                            pings.add(callable(ds, waitTimeout));
-                        }
+        ArrayList<Callable<DeviceStatus>> pings = new ArrayList<>();
+        while (true) {
+            try {
+                Iterable<DeviceStatus> ids = repository.findAll();
+                for (DeviceStatus ds : ids) {
+                    long now = System.currentTimeMillis();
+                    long updatedAt = Timestamp.valueOf(ds.getUpdatedAt()).getTime();
+                    if (now - updatedAt > sendTimeout) {
+                        pings.add(callable(ds, waitTimeout));
                     }
-                    executor.invokeAll(pings)
-                            .stream()
-                            .map(future -> {
-                                try {
-                                    return future.get();
-                                } catch (Exception e) {
-                                    throw new IllegalStateException(e);
-                                }
-                            })
-                            .forEach(this::updateDS);
-                    pings.clear();
-                    sleep(1);
-                } catch (Exception e) {
-                    e.printStackTrace();
                 }
+                executor.invokeAll(pings)
+                        .stream()
+                        .map(future -> {
+                            try {
+                                return future.get();
+                            } catch (Exception e) {
+                                throw new IllegalStateException(e);
+                            }
+                        })
+                        .forEach(this::updateDS);
+                pings.clear();
+                sleep(1);
+            } catch (Exception e) {
+                e.printStackTrace();
             }
+        }
     }
 
 }
